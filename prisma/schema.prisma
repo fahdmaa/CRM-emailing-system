@@ -1,0 +1,94 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Contact {
+  id          String   @id @default(cuid())
+  name        String
+  email       String   @unique
+  phone       String?
+  status      ContactStatus @default(INVITED)
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  emailLogs   EmailLog[]
+
+  @@map("contacts")
+}
+
+model Event {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  dateTime    DateTime
+  location    String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  emailLogs   EmailLog[]
+
+  @@map("events")
+}
+
+model EmailTemplate {
+  id          String   @id @default(cuid())
+  name        String
+  subject     String
+  body        String
+  type        TemplateType
+  isDefault   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  emailLogs   EmailLog[]
+
+  @@map("email_templates")
+}
+
+model EmailLog {
+  id          String   @id @default(cuid())
+  contactId   String
+  eventId     String?
+  templateId  String?
+  subject     String
+  body        String
+  status      EmailStatus @default(PENDING)
+  sentAt      DateTime?
+  errorMessage String?
+  createdAt   DateTime @default(now())
+
+  contact     Contact @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  event       Event?  @relation(fields: [eventId], references: [id])
+  template    EmailTemplate? @relation(fields: [templateId], references: [id])
+
+  @@map("email_logs")
+}
+
+enum ContactStatus {
+  INVITED
+  SIGNED_UP
+  NEED_REMINDER
+  NOT_COMING
+  BLACKLISTED
+}
+
+enum TemplateType {
+  INVITATION
+  REMINDER
+  CONFIRMATION
+  FOLLOW_UP
+}
+
+enum EmailStatus {
+  PENDING
+  SENT
+  FAILED
+  DELIVERED
+}
